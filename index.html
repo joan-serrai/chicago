@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#fff5f7">
+<title>Un plan creativo en Chicago 🎨</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+  :root{
+    --bg:#fff5f7;
+    --bg-2:#ffe9ef;
+    --card:#ffffff;
+    --ink:#3d2a33;
+    --ink-soft:#7a6069;
+    --rose:#e8647e;
+    --rose-dark:#d14b67;
+    --rose-soft:#fbd3dc;
+    --peach:#ffb59b;
+    --gold:#f6c177;
+    --red:#e23c4c;
+    --shadow:0 10px 30px rgba(232,100,126,.18);
+    --radius:22px;
+    --serif:'Playfair Display',Georgia,serif;
+    --sans:'Nunito',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:
+      radial-gradient(900px 600px at 10% -10%, #ffe1ea 0%, transparent 60%),
+      radial-gradient(800px 600px at 110% 110%, #ffe8d6 0%, transparent 60%),
+      var(--bg);
+    min-height:100dvh;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  /* ---------- Decoración de fondo ---------- */
+  .blob{position:fixed;border-radius:50%;filter:blur(60px);opacity:.55;pointer-events:none;z-index:0;animation:float 14s ease-in-out infinite}
+  .blob.a{width:380px;height:380px;background:#ffc9d6;top:-120px;left:-120px}
+  .blob.b{width:320px;height:320px;background:#ffd9c2;bottom:-100px;right:-80px;animation-delay:-7s}
+  @keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,30px) scale(1.08)}}
+
+  /* ---------- Pantallas ---------- */
+  .screen{
+    position:relative;z-index:1;
+    min-height:100dvh;
+    display:none;
+    flex-direction:column;align-items:center;justify-content:center;
+    padding:max(28px,env(safe-area-inset-top)) 20px max(28px,env(safe-area-inset-bottom));
+    text-align:center;
+  }
+  .screen.active{display:flex;animation:fadeIn .55s cubic-bezier(.2,.7,.2,1) both}
+  .screen.leaving{animation:fadeOut .35s ease both}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  @keyframes fadeOut{from{opacity:1}to{opacity:0;transform:translateY(-10px)}}
+
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:.78rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--rose-dark);background:#fff;border:1px solid var(--rose-soft);
+    padding:8px 14px;border-radius:999px;margin-bottom:22px;box-shadow:0 4px 14px rgba(232,100,126,.12);
+  }
+  h1{
+    font-family:var(--serif);font-weight:600;
+    font-size:clamp(1.75rem,5.6vw,3rem);line-height:1.15;
+    max-width:720px;margin:0 auto 14px;
+  }
+  h1 em{font-style:italic;color:var(--rose-dark)}
+  .sub{color:var(--ink-soft);font-size:clamp(1rem,2.6vw,1.2rem);font-weight:600;margin-bottom:34px}
+
+  /* ---------- Botones ---------- */
+  .btn{
+    font-family:var(--sans);font-weight:800;font-size:1.05rem;
+    border:0;border-radius:999px;padding:16px 34px;cursor:pointer;
+    transition:transform .18s ease, box-shadow .18s ease, background .18s ease, opacity .2s;
+    user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn-primary{
+    color:#fff;background:linear-gradient(135deg,var(--rose) 0%,#ff8a73 100%);
+    box-shadow:0 12px 28px rgba(232,100,126,.35);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(232,100,126,.42)}
+  .btn-ghost{
+    color:var(--ink);background:#fff;border:2px solid var(--rose-soft);
+    box-shadow:0 6px 16px rgba(61,42,51,.06);
+  }
+  .btn-ghost:hover{border-color:var(--rose)}
+  .btn[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none;transform:none}
+
+  .actions{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:center;min-height:80px}
+
+  /* Paso 1: botón SÍ crece, botón NO huye */
+  #btnYes{transform-origin:center;transition:transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .3s, padding .35s, font-size .35s}
+  #btnNo{position:relative;transition:transform .18s ease, box-shadow .18s, left .25s cubic-bezier(.2,.8,.2,1), top .25s cubic-bezier(.2,.8,.2,1)}
+  #btnNo.escaped{position:fixed;z-index:50;margin:0}
+  .taunt{
+    min-height:2.2em;margin-top:18px;
+    font-weight:800;color:var(--rose-dark);font-size:1.05rem;
+    opacity:0;transform:translateY(6px);transition:opacity .25s, transform .25s;
+  }
+  .taunt.show{opacity:1;transform:none;animation:pop .35s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes pop{0%{transform:scale(.8)}100%{transform:scale(1)}}
+
+  /* ---------- Paso 2: catálogo ---------- */
+  #step2{justify-content:flex-start}
+  .wrap{width:100%;max-width:960px;margin:0 auto}
+  .counter{
+    display:inline-flex;align-items:center;gap:10px;
+    background:#fff;border:1px solid var(--rose-soft);border-radius:999px;
+    padding:10px 18px;font-weight:800;color:var(--ink);box-shadow:0 6px 16px rgba(232,100,126,.1);
+    margin:4px 0 26px;transition:transform .2s;
+  }
+  .counter .dots{display:inline-flex;gap:6px}
+  .counter .dots i{width:12px;height:12px;border-radius:50%;background:var(--rose-soft);transition:background .25s, transform .25s}
+  .counter .dots i.on{background:var(--rose);transform:scale(1.15)}
+  .counter.bump{animation:bump .3s ease}
+  @keyframes bump{50%{transform:scale(1.06)}}
+
+  .grid{
+    display:grid;gap:18px;
+    grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+    text-align:left;width:100%;
+  }
+  .card{
+    background:var(--card);border-radius:var(--radius);overflow:hidden;
+    border:3px solid transparent;box-shadow:var(--shadow);
+    cursor:pointer;position:relative;
+    transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+    -webkit-user-select:none;user-select:none;
+  }
+  .card:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(232,100,126,.24)}
+  .card.selected{border-color:var(--rose);box-shadow:0 18px 40px rgba(232,100,126,.3)}
+  .card.locked{opacity:.55;filter:saturate(.6)}
+  .card.locked:hover{transform:none}
+  .card .img{
+    position:relative;height:170px;overflow:hidden;
+    background:linear-gradient(135deg,var(--rose-soft),var(--peach));
+    display:flex;align-items:center;justify-content:center;
+  }
+  .card .img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
+  .card:hover .img img{transform:scale(1.05)}
+  .card .img .emoji-fallback{font-size:3.6rem;display:none}
+  .card .img.no-img img{display:none}
+  .card .img.no-img .emoji-fallback{display:block}
+  .card .num{
+    position:absolute;top:12px;left:12px;
+    background:rgba(255,255,255,.92);color:var(--rose-dark);
+    font-weight:800;font-size:.8rem;padding:5px 10px;border-radius:999px;
+  }
+  .card .check{
+    position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;
+    background:var(--rose);color:#fff;display:grid;place-items:center;font-weight:900;
+    transform:scale(0);transition:transform .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 6px 14px rgba(232,100,126,.4);
+  }
+  .card.selected .check{transform:scale(1)}
+  .card .body{padding:16px 18px 18px}
+  .card h3{font-family:var(--serif);font-size:1.15rem;font-weight:600;line-height:1.25;margin-bottom:4px}
+  .card .venue{font-size:.82rem;color:var(--ink-soft);font-weight:700;letter-spacing:.02em}
+  .card .toggle{
+    margin-top:10px;display:inline-flex;align-items:center;gap:6px;
+    font-size:.85rem;font-weight:800;color:var(--rose-dark);background:none;border:0;cursor:pointer;padding:4px 0;font-family:inherit;
+  }
+  .card .toggle .chev{display:inline-block;transition:transform .3s}
+  .card.open .toggle .chev{transform:rotate(180deg)}
+  .card .desc{
+    display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s ease;
+  }
+  .card .desc > p{overflow:hidden;color:var(--ink-soft);font-size:.95rem;line-height:1.5}
+  .card.open .desc{grid-template-rows:1fr}
+  .card.open .desc > p{padding-top:8px}
+
+  .confirm-bar{
+    position:sticky;bottom:0;z-index:5;
+    margin-top:26px;padding:14px 0 max(10px,env(safe-area-inset-bottom));
+    background:linear-gradient(to top,var(--bg) 60%,transparent);
+    width:100%;display:flex;justify-content:center;
+  }
+  .confirm-bar .btn{width:min(100%,420px);font-size:1.1rem;padding:18px 28px}
+
+  /* ---------- Paso 3 ---------- */
+  #step3{overflow:hidden}
+  .watermark{
+    position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;
+    padding-bottom:max(22px,env(safe-area-inset-bottom));pointer-events:none;
+    font-family:var(--serif);font-style:italic;font-size:clamp(1rem,3.6vw,1.6rem);
+    color:rgba(232,100,126,.28);z-index:0;
+  }
+  .final-actions{position:relative;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:88px;row-gap:36px}
+  .choice{position:relative}
+  .arrow{
+    position:absolute;left:50%;top:-58px;transform:translateX(-50%);
+    font-size:2.4rem;line-height:1;opacity:0;pointer-events:none;
+    transition:opacity .3s;
+  }
+  .arrow.show{opacity:1;animation:bounce .7s ease-in-out infinite}
+  @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-14px)}}
+  .choice.glow .btn{animation:glow 1.1s ease-in-out infinite}
+  @keyframes glow{0%,100%{box-shadow:0 12px 28px rgba(232,100,126,.35)}50%{box-shadow:0 0 0 10px rgba(232,100,126,.18),0 12px 34px rgba(232,100,126,.5)}}
+
+  #btnFinalNo.wrong{
+    background:var(--red);color:#fff;border-color:var(--red);
+    animation:shake .5s cubic-bezier(.36,.07,.19,.97) both;
+    box-shadow:0 10px 24px rgba(226,60,76,.4);
+  }
+  @keyframes shake{
+    10%,90%{transform:translate3d(-2px,0,0)}
+    20%,80%{transform:translate3d(4px,0,0)}
+    30%,50%,70%{transform:translate3d(-7px,0,0) rotate(-2deg)}
+    40%,60%{transform:translate3d(7px,0,0) rotate(2deg)}
+  }
+  .wrong-msg{
+    margin-top:24px;font-weight:800;color:var(--red);font-size:1.05rem;
+    opacity:0;transform:translateY(8px);transition:opacity .3s, transform .3s;min-height:1.6em;
+  }
+  .wrong-msg.show{opacity:1;transform:none}
+  .wrong-msg .hand{display:inline-block;animation:point 1s ease-in-out infinite}
+  @keyframes point{50%{transform:translateY(-6px)}}
+
+  /* Mensaje final */
+  .final{
+    position:relative;z-index:2;
+    background:rgba(255,255,255,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border:1px solid #fff;border-radius:28px;padding:34px 28px;max-width:640px;
+    box-shadow:0 24px 60px rgba(232,100,126,.25);
+    animation:fadeIn .7s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .final .big-heart{font-size:3.2rem;display:block;margin-bottom:12px;animation:beat 1.2s ease-in-out infinite}
+  @keyframes beat{0%,100%{transform:scale(1)}14%{transform:scale(1.18)}28%{transform:scale(1)}42%{transform:scale(1.12)}}
+  .final p{font-family:var(--serif);font-size:clamp(1.15rem,3.2vw,1.55rem);line-height:1.45}
+  .final .picks{
+    margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;
+  }
+  .final .picks span{
+    background:var(--rose-soft);color:var(--rose-dark);font-weight:800;font-size:.9rem;
+    padding:8px 14px;border-radius:999px;
+  }
+
+  /* Lluvia de corazones */
+  .heart{
+    position:fixed;top:-8vh;z-index:40;pointer-events:none;
+    animation:fall linear forwards;will-change:transform,opacity;
+  }
+  @keyframes fall{
+    0%{transform:translateY(0) rotate(0deg);opacity:0}
+    8%{opacity:1}
+    100%{transform:translateY(115vh) rotate(var(--rot,360deg));opacity:.9}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  }
+  @media (max-width:480px){
+    .grid{grid-template-columns:1fr}
+    .btn{padding:15px 28px;font-size:1rem}
+    .arrow{top:-52px;font-size:2.1rem}
+  }
+</style>
+</head>
+<body>
+<div class="blob a" aria-hidden="true"></div>
+<div class="blob b" aria-hidden="true"></div>
+
+<!-- ============ PASO 1 ============ -->
+<section id="step1" class="screen active" aria-labelledby="q1">
+  <div class="eyebrow">✈️ Chicago · 3 – 13 de noviembre</div>
+  <h1 id="q1">¿Te apetece que hagamos algo <em>muy creativo y manual</em> juntos en Chicago?</h1>
+  <p class="sub">Solo hay una respuesta correcta...</p>
+  <div class="actions">
+    <button id="btnYes" class="btn btn-primary" type="button">¡SÍ!</button>
+    <button id="btnNo" class="btn btn-ghost" type="button" aria-label="No (buena suerte intentándolo)">NO</button>
+  </div>
+  <p id="taunt" class="taunt" aria-live="polite"></p>
+</section>
+
+<!-- ============ PASO 2 ============ -->
+<section id="step2" class="screen" aria-labelledby="q2">
+  <div class="wrap">
+    <div class="eyebrow">🎨 Nuestro día creativo</div>
+    <h1 id="q2">¡Sabía que dirías que sí! 🎉</h1>
+    <p class="sub">Elige tus 2 actividades manuales favoritas para nuestro día creativo:</p>
+
+    <div class="counter" id="counter" aria-live="polite">
+      <span class="dots"><i id="dot1"></i><i id="dot2"></i></span>
+      <span>Has seleccionado: <strong id="count">0</strong> de 2</span>
+    </div>
+
+    <div class="grid" id="grid" role="list"></div>
+
+    <div class="confirm-bar">
+      <button id="btnConfirm" class="btn btn-primary" type="button" disabled>Confirmar mis 2 favoritas 💖</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PASO 3 ============ -->
+<section id="step3" class="screen" aria-labelledby="q3">
+  <div class="watermark" aria-hidden="true">Ten huevos a clicar que no 😉</div>
+
+  <div id="finalQuestion">
+    <div class="eyebrow">💌 Una última cosa</div>
+    <h1 id="q3">Por último y por curiosidad... <em>¿Sabes que te quiero y nos casaremos, verdad?</em></h1>
+    <p class="sub">Piénsalo bien (o no, es fácil).</p>
+
+    <div class="final-actions">
+      <div class="choice" id="choiceYes">
+        <span class="arrow" aria-hidden="true">⬇️</span>
+        <button class="btn btn-primary" data-answer="yes" type="button">Sí</button>
+      </div>
+      <div class="choice" id="choiceObv">
+        <span class="arrow" aria-hidden="true">⬇️</span>
+        <button class="btn btn-primary" data-answer="yes" type="button">Obviamente</button>
+      </div>
+      <div class="choice">
+        <button id="btnFinalNo" class="btn btn-ghost" type="button">No</button>
+      </div>
+    </div>
+    <p id="wrongMsg" class="wrong-msg" aria-live="assertive"></p>
+  </div>
+
+  <div id="finalMessage" class="final" hidden>
+    <span class="big-heart" aria-hidden="true">❤️</span>
+    <p>¡Tus 2 talleres favoritos quedan reservados! El resto del plan de ese día es alto secreto... Prepárate para el mejor viaje a Chicago. Te amo ❤️</p>
+    <div class="picks" id="picks"></div>
+  </div>
+</section>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ---------------- Datos ---------------- */
+  const WORKSHOPS = [
+    {
+      id:'perfume', emoji:'🌸',
+      title:'Creación de Perfume a Medida', venue:'Aroma Workshop',
+      desc:'Diseñar nuestra propia fragancia personalizada desde cero con un perfumista y llevarnos el frasco con nuestra fórmula exclusiva.',
+      img:'https://images.unsplash.com/photo-1541643600914-78b084683601?w=900&q=80&auto=format&fit=crop'
+    },
+    {
+      id:'tufting', emoji:'🧶',
+      title:'Taller de Rug Tufting', venue:'Pop Craft Studio',
+      desc:'Tejer mini-alfombras o tapices suaves con pistola de lana neumática y más de 100 colores a elegir.',
+      img:'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=900&q=80&auto=format&fit=crop'
+    },
+    {
+      id:'pottery', emoji:'🏺',
+      title:'Torno de Alfarero y Cerámica', venue:'Penguin Foot Pottery',
+      desc:'Modelar en torno de alfarero boles o tazas con arcilla y ensuciarnos las manos al estilo “Ghost”.',
+      img:'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=900&q=80&auto=format&fit=crop'
+    },
+    {
+      id:'glass', emoji:'🔥',
+      title:'Soplado de Vidrio en Caliente', venue:'Ignite Glass Studios',
+      desc:'Trabajar con hornos a más de 1100 °C y moldear juntos un vaso, una flor de cristal o un pisapapeles incandescente.',
+      img:'https://images.unsplash.com/photo-1510137600163-2729bc6959a6?w=900&q=80&auto=format&fit=crop'
+    },
+    {
+      id:'mosaic', emoji:'🪔',
+      title:'Lámparas de Mosaico Turco', venue:'Tiles Workshop',
+      desc:'Diseñar una lámpara de mesa artesanal con teselas y cuentas de vidrio de colores estilo otomano.',
+      img:'https://images.unsplash.com/photo-1548013146-72479768bada?w=900&q=80&auto=format&fit=crop'
+    },
+    {
+      id:'leather', emoji:'👜',
+      title:'Marroquinería y Cuero Artesanal', venue:'School of Leather Arts',
+      desc:'Cortar, coser y grabar nuestras iniciales en una cartera, clutch o accesorio de cuero auténtico.',
+      img:'https://images.unsplash.com/photo-1473188588951-666fce8e7c68?w=900&q=80&auto=format&fit=crop'
+    },
+    {
+      id:'pasta', emoji:'🍝',
+      title:'Cocina de Pasta Artesanal Amasada a Mano', venue:'Eataly Scuola',
+      desc:'Taller manual para amasar harina y huevo, estirar masa y moldear pasta fresca tradicional.',
+      img:'https://images.unsplash.com/photo-1556761223-4c4282c73f77?w=900&q=80&auto=format&fit=crop'
+    }
+  ];
+
+  const TAUNTS = [
+    '¡Frío, frío! ❄️', 'Ni lo intentes 😜', '¿En serio? 🤨', 'Ese botón es tímido...',
+    'Casi. Pero no. 😏', 'El "SÍ" cada vez es más grande, fíjate 👀', 'Inténtalo otra vez, va 🙃',
+    'No existe esa opción en este viaje ✈️', 'Te lo pongo fácil: el otro botón 💘', '¿Todavía?... Qué cabezota 😂'
+  ];
+
+  const $ = (s, el=document) => el.querySelector(s);
+  const hasConfetti = () => typeof window.confetti === 'function';
+
+  /* ---------------- Navegación ---------------- */
+  function goTo(fromId, toId, after){
+    const from = $(fromId), to = $(toId);
+    from.classList.add('leaving');
+    setTimeout(() => {
+      from.classList.remove('active','leaving');
+      to.classList.add('active');
+      window.scrollTo(0, 0);
+      if (after) after();
+    }, 330);
+  }
+
+  /* ---------------- PASO 1: botón escurridizo ---------------- */
+  const btnYes = $('#btnYes');
+  const btnNo  = $('#btnNo');
+  const taunt  = $('#taunt');
+  let escapes = 0;
+  let yesScale = 1;
+
+  function escape(e){
+    if (e && e.cancelable) e.preventDefault();  // evita que el touch acabe en click
+    escapes++;
+
+    const pad = 16;
+    const r = btnNo.getBoundingClientRect();
+    const w = r.width, h = r.height;
+    const maxX = Math.max(pad, window.innerWidth  - w - pad);
+    const maxY = Math.max(pad, window.innerHeight - h - pad);
+
+    // Nueva posición alejada del puntero/dedo y del botón SÍ
+    let x, y, tries = 0;
+    const yesR = btnYes.getBoundingClientRect();
+    const px = e && e.clientX != null ? e.clientX : r.left + w/2;
+    const py = e && e.clientY != null ? e.clientY : r.top + h/2;
+    do {
+      x = pad + Math.random() * (maxX - pad);
+      y = pad + Math.random() * (maxY - pad);
+      tries++;
+    } while (tries < 20 && (
+      Math.hypot(x + w/2 - px, y + h/2 - py) < 140 ||
+      (x < yesR.right + 12 && x + w > yesR.left - 12 && y < yesR.bottom + 12 && y + h > yesR.top - 12)
+    ));
+
+    btnNo.classList.add('escaped');
+    btnNo.style.left = x + 'px';
+    btnNo.style.top  = y + 'px';
+    btnNo.style.transform = `rotate(${(Math.random()*16-8).toFixed(1)}deg)`;
+
+    // El SÍ crece (con tope para que no rompa el layout)
+    yesScale = Math.min(1 + escapes * 0.12, 2.1);
+    btnYes.style.transform = `scale(${yesScale})`;
+    btnYes.style.boxShadow = `0 ${12+escapes*2}px ${28+escapes*4}px rgba(232,100,126,.45)`;
+
+    // Micro-texto cómico
+    taunt.textContent = TAUNTS[(escapes - 1) % TAUNTS.length];
+    taunt.classList.remove('show');
+    void taunt.offsetWidth; // reinicia animación
+    taunt.classList.add('show');
+
+    // A partir del 6º intento, el NO empieza a encogerse
+    if (escapes >= 6) {
+      const s = Math.max(.55, 1 - (escapes - 5) * 0.08);
+      btnNo.style.transform += ` scale(${s})`;
+    }
+  }
+
+  btnNo.addEventListener('pointerover', escape);
+  btnNo.addEventListener('touchstart', escape, {passive:false});
+  btnNo.addEventListener('focus', escape);
+  btnNo.addEventListener('click', escape); // por si alguien es MUY rápido
+
+  btnYes.addEventListener('click', () => {
+    btnYes.disabled = true;
+    burst(0.6);
+    goTo('#step1', '#step2', () => { btnNo.classList.remove('escaped'); });
+  });
+
+  /* ---------------- PASO 2: catálogo ---------------- */
+  const grid = $('#grid');
+  const countEl = $('#count');
+  const counter = $('#counter');
+  const btnConfirm = $('#btnConfirm');
+  const selected = new Set();
+
+  WORKSHOPS.forEach((w, i) => {
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.setAttribute('role','listitem');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-pressed','false');
+    card.dataset.id = w.id;
+    card.innerHTML = `
+      <div class="img">
+        <img src="${w.img}" alt="${w.title}" loading="lazy" referrerpolicy="no-referrer">
+        <span class="emoji-fallback" aria-hidden="true">${w.emoji}</span>
+        <span class="num">${i+1} / ${WORKSHOPS.length}</span>
+        <span class="check" aria-hidden="true">✓</span>
+      </div>
+      <div class="body">
+        <h3>${w.emoji} ${w.title}</h3>
+        <div class="venue">${w.venue}</div>
+        <button class="toggle" type="button" aria-expanded="false">¿En qué consiste? <span class="chev">▾</span></button>
+        <div class="desc"><p>${w.desc}</p></div>
+      </div>`;
+
+    // Fallback si la imagen no carga
+    const img = $('img', card);
+    img.addEventListener('error', () => img.parentElement.classList.add('no-img'));
+
+    // Desplegable (no selecciona)
+    const toggle = $('.toggle', card);
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = card.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', String(open));
+    });
+
+    // Selección
+    card.addEventListener('click', () => toggleSelect(card, w));
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSelect(card, w); }
+    });
+
+    grid.appendChild(card);
+  });
+
+  function toggleSelect(card, w){
+    if (selected.has(w.id)) {
+      selected.delete(w.id);
+      card.classList.remove('selected');
+      card.setAttribute('aria-pressed','false');
+    } else {
+      if (selected.size >= 2) {
+        // Feedback: ya hay 2
+        counter.classList.remove('bump'); void counter.offsetWidth; counter.classList.add('bump');
+        card.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:260});
+        return;
+      }
+      selected.add(w.id);
+      card.classList.add('selected');
+      card.setAttribute('aria-pressed','true');
+      if (hasConfetti()) {
+        const r = card.getBoundingClientRect();
+        confetti({ particleCount: 28, spread: 60, startVelocity: 22, scalar: .8,
+          origin: { x: (r.left + r.width/2)/window.innerWidth, y: (r.top + 40)/window.innerHeight },
+          colors: ['#e8647e','#ffb59b','#f6c177','#ffffff'] });
+      }
+    }
+    updateCounter();
+  }
+
+  function updateCounter(){
+    const n = selected.size;
+    countEl.textContent = n;
+    $('#dot1').classList.toggle('on', n >= 1);
+    $('#dot2').classList.toggle('on', n >= 2);
+    counter.classList.remove('bump'); void counter.offsetWidth; counter.classList.add('bump');
+    btnConfirm.disabled = n !== 2;
+    // Bloquea visualmente las no seleccionadas cuando ya hay 2
+    grid.querySelectorAll('.card').forEach(c => {
+      c.classList.toggle('locked', n === 2 && !selected.has(c.dataset.id));
+    });
+  }
+
+  btnConfirm.addEventListener('click', () => {
+    if (selected.size !== 2) return;
+    burst(0.5);
+    const picks = $('#picks');
+    picks.innerHTML = '';
+    WORKSHOPS.filter(w => selected.has(w.id)).forEach(w => {
+      const s = document.createElement('span');
+      s.textContent = `${w.emoji} ${w.title}`;
+      picks.appendChild(s);
+    });
+    goTo('#step2', '#step3');
+  });
+
+  /* ---------------- PASO 3 ---------------- */
+  const btnFinalNo = $('#btnFinalNo');
+  const wrongMsg = $('#wrongMsg');
+  let noClicks = 0;
+
+  btnFinalNo.addEventListener('click', () => {
+    noClicks++;
+    btnFinalNo.textContent = '¿Eres tonta? 🤨';
+    btnFinalNo.classList.remove('wrong'); void btnFinalNo.offsetWidth; btnFinalNo.classList.add('wrong');
+    document.querySelectorAll('#choiceYes .arrow, #choiceObv .arrow').forEach(a => a.classList.add('show'));
+    $('#choiceYes').classList.add('glow');
+    $('#choiceObv').classList.add('glow');
+    const msgs = [
+      'Respuesta incorrecta. Mira las flechas, anda <span class="hand">👆</span>',
+      'Sigue siendo incorrecta. Las flechas, cariño <span class="hand">👆</span>',
+      'Vale, ahora ya lo haces por fastidiar 😂 <span class="hand">👆</span>'
+    ];
+    wrongMsg.innerHTML = msgs[Math.min(noClicks - 1, msgs.length - 1)];
+    wrongMsg.classList.remove('show'); void wrongMsg.offsetWidth; wrongMsg.classList.add('show');
+  });
+
+  document.querySelectorAll('[data-answer="yes"]').forEach(b => {
+    b.addEventListener('click', () => {
+      $('#finalQuestion').style.display = 'none';
+      $('#finalMessage').hidden = false;
+      $('.watermark').style.opacity = '0';
+      celebrate();
+    });
+  });
+
+  /* ---------------- Efectos ---------------- */
+  function burst(intensity){
+    if (!hasConfetti()) return;
+    const colors = ['#e8647e','#ff8a73','#ffb59b','#f6c177','#ffffff','#fbd3dc'];
+    confetti({ particleCount: Math.round(120*intensity), spread: 70, origin: { y: .65 }, colors });
+    setTimeout(() => confetti({ particleCount: Math.round(60*intensity), angle: 60, spread: 55, origin: { x: 0 }, colors }), 150);
+    setTimeout(() => confetti({ particleCount: Math.round(60*intensity), angle: 120, spread: 55, origin: { x: 1 }, colors }), 300);
+  }
+
+  function celebrate(){
+    // Confeti masivo durante ~4 s
+    if (hasConfetti()) {
+      const end = Date.now() + 4000;
+      const colors = ['#e8647e','#ff8a73','#ffb59b','#f6c177','#ffffff'];
+      (function frame(){
+        confetti({ particleCount: 6, angle: 60, spread: 60, origin: { x: 0, y: .7 }, colors });
+        confetti({ particleCount: 6, angle: 120, spread: 60, origin: { x: 1, y: .7 }, colors });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      })();
+      setTimeout(() => confetti({ particleCount: 220, spread: 120, startVelocity: 45, origin: { y: .5 }, colors }), 400);
+      // Corazones de confeti (shape heart disponible en 1.6)
+      try {
+        const heart = confetti.shapeFromText ? confetti.shapeFromText({ text: '❤️', scalar: 2.2 }) : null;
+        if (heart) setTimeout(() => confetti({ particleCount: 40, spread: 100, scalar: 2.2, shapes: [heart], origin: { y: .4 } }), 900);
+      } catch(_){}
+    }
+    // Lluvia de corazones (CSS, sin dependencias)
+    const hearts = ['❤️','💖','💕','🩷','💗','💘'];
+    let made = 0;
+    const timer = setInterval(() => {
+      for (let i = 0; i < 3; i++) {
+        const h = document.createElement('span');
+        h.className = 'heart';
+        h.textContent = hearts[Math.floor(Math.random()*hearts.length)];
+        h.style.left = Math.random()*100 + 'vw';
+        h.style.fontSize = (16 + Math.random()*30) + 'px';
+        h.style.animationDuration = (3.5 + Math.random()*3) + 's';
+        h.style.setProperty('--rot', (Math.random()*720-360) + 'deg');
+        h.style.opacity = '0';
+        document.body.appendChild(h);
+        h.addEventListener('animationend', () => h.remove());
+      }
+      if (++made > 30) clearInterval(timer);
+    }, 180);
+  }
+
+  // Si la ventana cambia de tamaño con el NO fugado, lo devolvemos a zona visible
+  window.addEventListener('resize', () => {
+    if (!btnNo.classList.contains('escaped')) return;
+    const r = btnNo.getBoundingClientRect();
+    if (r.right > window.innerWidth || r.bottom > window.innerHeight) escape();
+  });
+})();
+</script>
+</body>
+</html>
